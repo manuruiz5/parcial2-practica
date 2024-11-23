@@ -1,107 +1,61 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from "react";
+import { View, StyleSheet } from "react-native";
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import PlanetList from "./components/PlanetList";
+import Home from "./components/Home";
+import PlanetDetails from "./components/PlanetDetails";
 
-export default function Index() {
-  const [task, setTask] = useState(''); // Estado para el texto de la nueva tarea
-  const [tasks, setTasks] = useState<string[]>([]); // Estado para la lista de tareas
+const PlanetsContext = React.createContext({ planets: [] });
 
-  // Función para añadir una tarea a la lista
-  const addTask = () => {
-    if (task.trim()) {
-      setTasks([...tasks, task]);
-      setTask(''); // Limpiar el campo de entrada
+
+const index = () => {
+  const [planets, setPlanets] = useState([]);
+
+  useEffect(() => {
+    const fetchPlanets = async () => {
+      try {
+
+        const response = await fetch("http://161.35.143.238:8000/mruiz");
+        const data = await response.json();
+        setPlanets(data);
+      } catch (error) {
+        console.error("Error fetching planets:", error);
+      }
+    };
+    fetchPlanets();
+  }, []);
+
+  
+ 
+  const handlePressPlanet = async (id: string) => {
+    console.log("Planet selected with ID:", id);
+    try {
+      const response = await fetch(`http://161.35.143.238:8000/mruiz/${id}`);
+      if (!response.ok) {
+        throw new Error("Error fetching planet details");
+      }
+      const planet = await response.json();
+      console.log("Planet details:", planet);
+      // Aquí puedes hacer algo con los detalles del planeta, como navegar a otra pantalla.
+    } catch (error) {
+      console.error("Error fetching planet details:", error);
     }
   };
+ 
 
-  // Función para eliminar una tarea por su índice
-  const removeTask = (index: number) => {
-    setTasks(tasks.filter((_, i) => i !== index));
-  };
 
   return (
-    <View style={styles.container}>
-      {/* TextInput para añadir nuevas tareas */}
-      <TextInput
-        style={styles.input}
-        placeholder="Escribe una tarea..."
-        value={task}
-        onChangeText={setTask}
-      />
-
-      {/* Botón para añadir la tarea */}
-      <TouchableOpacity style={styles.addButton} onPress={addTask}>
-        <Text style={styles.addButtonText}>Añadir Tarea</Text>
-      </TouchableOpacity>
-
-      {/* Lista de tareas */}
-      <FlatList
-        data={tasks}
-        renderItem={({ item, index }) => (
-          <View style={styles.taskContainer}>
-            <Text style={styles.taskText}>{item}</Text>
-            <TouchableOpacity onPress={() => removeTask(index)} style={styles.deleteButton}>
-              <Text style={styles.deleteButtonText}>Eliminar</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        keyExtractor={(_, index) => index.toString()}
-      />
-    </View>
+    <PlanetsContext.Provider value={{ planets }}>
+      <View style={styles.container}>
+        <Home onPressPlanet={handlePressPlanet} />
+      </View>
+    </PlanetsContext.Provider>
   );
-}
+};
 
-// Estilos para el componente
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f5f5f5',
-  },
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginBottom: 10,
-    width: '100%',
-  },
-  addButton: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 20,
-    width: '100%',
-  },
-  addButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  taskContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#e0e0e0',
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 10,
-    width: '100%',
-  },
-  taskText: {
-    fontSize: 16,
-  },
-  deleteButton: {
-    backgroundColor: '#F44336',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-  },
-  deleteButtonText: {
-    color: 'white',
-    fontSize: 14,
-  },
+  container: { flex: 1, backgroundColor: "#fff" },
 });
+export { PlanetsContext };
+export default index;
